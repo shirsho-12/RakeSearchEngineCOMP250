@@ -105,18 +105,22 @@ public class SearchEngine {
 	 * their position in the list.
 	 */
 	public ArrayList<Double> computeRanks(ArrayList<String> vertices) {
-		ArrayList<Double> values = new ArrayList<>();
-		for (String url: vertices) values.add(innerCompute(url));
-		System.out.println(values.toString());
-		return values;
-	}
-	private Double innerCompute(String url) {
 		// TODO : Add code here
-		ArrayList <String> incomingUrls = internet.getEdgesInto(url);
-		double val = 0.5;
-		for (String outUrl: incomingUrls)
-			val += 0.5 * internet.getPageRank(outUrl) / internet.getOutDegree(outUrl);
-		return val;
+		ArrayList<Double> values = new ArrayList<>();
+		ArrayList <String> incomingUrls;
+		double val;
+		for (String url: vertices) values.add(internet.getPageRank(url));
+		int i = 0;
+		for (String url: vertices){
+			val = 0.5;
+			incomingUrls = internet.getEdgesInto(url);
+			for (String outUrl: incomingUrls) {
+				val += 0.5 * internet.getPageRank(outUrl) / internet.getOutDegree(outUrl);
+			}
+			values.set(i, val);
+			i++;
+		}
+		return values;
 	}
 	/* Returns a list of urls containing the query, ordered by rank
 	 * Returns an empty list if no web site contains the query.
