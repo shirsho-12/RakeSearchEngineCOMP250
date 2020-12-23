@@ -1,10 +1,11 @@
 package finalproject;
 
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.ArrayList;
 
 public class SearchEngine {
-	public HashMap<String, ArrayList<String> > wordIndex;   // this will contain a set of pairs (String, LinkedList of Strings)	
+	public HashMap<String, ArrayList<String> > wordIndex;   // this will contain a set of pairs (String, LinkedList of Strings)
 	public MyWebGraph internet;
 	public XmlParser parser;
 	public SearchEngine(){
@@ -16,12 +17,12 @@ public class SearchEngine {
 		this.internet = new MyWebGraph();
 		this.parser = new XmlParser(filename);
 	}
-	
-	/* 
+
+	/*
 	 * This does a graph traversal of the web, starting at the given url.
 	 * For each new page seen, it updates the wordIndex, the web graph,
 	 * and the set of visited vertices.
-	 * 
+	 *
 	 * 	This method will fit in about 30-50 lines (or less)
 	 */
 	public void crawlAndIndex(String url) throws Exception {
@@ -33,16 +34,34 @@ public class SearchEngine {
 //		System.out.print(url + " " + vertexFlag + "    ");
 		internet.setVisited(url, true);
 		ArrayList<String> links = parser.getLinks(url);
-//        for (String link: links)
-//        {
-            if (! wordIndex.containsKey(url)){
-                ArrayList<String> text = parser.getContent(url);
-                for (int j = 0; j < text.size(); j++){
-                    text.set(j, text.get(j).toLowerCase());
-                }
-                wordIndex.put(url, text);
-            }
-//        }
+		ArrayList<String> text;
+		ArrayList<String> newList;
+		internet.setPageRank(url, 1.0);
+		text = parser.getContent(url);
+		for (String word: text){
+			word = word.toLowerCase();
+			if (!wordIndex.containsKey(word)){
+				ArrayList<String> urlList = new ArrayList<>();
+				urlList.add(url);
+				wordIndex.put(word, urlList);
+			}
+			else{
+				if (! wordIndex.get(word).contains(url)) {
+					newList = wordIndex.get(word);
+					newList.add(url);
+					wordIndex.replace(word, newList);
+				}
+			}
+		}
+		if (!wordIndex.containsKey(url)) {
+
+			for (int j = 0; j < text.size(); j++) {
+				text.set(j, text.get(j).toLowerCase());
+				wordIndex.put(url, text);
+			}
+			wordIndex.put(url, text);
+		}
+
 		for (String link: links){
 			internet.addVertex(link);
 //			java.util.Set<String> set = new java.util.HashSet<>();
@@ -52,89 +71,79 @@ public class SearchEngine {
 				crawlAndIndex(link);
 			}
 		}
-//		resetVisits(url);
 	}
-	private void resetVisits(String url){
-		ArrayList<String> links = parser.getLinks(url);
-		for (String link: links){
-			if (internet.getVisited(url)){
-				internet.setVisited(url, false);
-				resetVisits(link);
-			}
-		}
-	}
-	
-	
-	
-	/* 
+
+	/*
 	 * This computes the pageRanks for every vertex in the web graph.
 	 * It will only be called after the graph has been constructed using
-	 * crawlAndIndex(). 
-	 * To implement this method, refer to the algorithm described in the 
-	 * assignment pdf. 
-	 * 
+	 * crawlAndIndex().
+	 * To implement this method, refer to the algorithm described in the
+	 * assignment pdf.
+	 *
 	 * This method will probably fit in about 30 lines.
 	 */
 	public void assignPageRanks(double epsilon) {
 		// TODO : Add code here
 		if (epsilon < 0) epsilon = - epsilon;
-		for (String url : internet.getVertices()) internet.setPageRank(url, 1);
 		boolean loopFlag, flag = true;
-		int i;
+		double val;
 		while (flag) {
+			ArrayList<Double> prevRanks = new ArrayList<>();
+			for (String url: internet.getVertices())
+			{
+				prevRanks.add(internet.getPageRank(url));
+			}
 			ArrayList<Double> newRanks = computeRanks(internet.getVertices());
 			loopFlag = true;
-			i = 0;
-			for (String url : internet.getVertices()) {
-				double val = (internet.getPageRank(url) - newRanks.get(i));
+			for (int i = 0; i <  prevRanks.size(); i++) {
+				val = (prevRanks.get(i) - newRanks.get(i));
 				if (val < 0) val = - val;
-//				System.out.println(val);
-				if (val > epsilon){
-					loopFlag = false;
-				}
-				internet.setPageRank(url, newRanks.get(i));
-				i++;
+				if (val > epsilon) loopFlag = false;
 			}
 			if (loopFlag) flag = false;
 		}
 	}
 	/*
-	 * The method takes as input an ArrayList<String> representing the urls in the web graph 
-	 * and returns an ArrayList<double> representing the newly computed ranks for those urls. 
-	 * Note that the double in the output list is matched to the url in the input list using 
+	 * The method takes as input an ArrayList<String> representing the urls in the web graph
+	 * and returns an ArrayList<double> representing the newly computed ranks for those urls.
+	 * Note that the double in the output list is matched to the url in the input list using
 	 * their position in the list.
 	 */
 	public ArrayList<Double> computeRanks(ArrayList<String> vertices) {
-		// TODO : Add code here
 		ArrayList<Double> values = new ArrayList<>();
-		ArrayList <String> incomingUrls;
 		double val;
-		for (String url: vertices) values.add(internet.getPageRank(url));
-		int i = 0;
-		for (String url: vertices){
-			val = 0.5;
-			incomingUrls = internet.getEdgesInto(url);
-			for (String outUrl: incomingUrls) {
-				val += 0.5 * internet.getPageRank(outUrl) / internet.getOutDegree(outUrl);
-			}
-			values.set(i, val);
-			i++;
+		for (String url: vertices)
+		{
+			val = innerCompute(url);
+			values.add(val);
 		}
+		for (int i = 0; i < values.size(); i++)
+			internet.setPageRank(vertices.get(i), values.get(i));
 		return values;
+	}
+	private Double innerCompute(String url) {
+		// TODO : Add code here
+		ArrayList <String> incomingUrls = internet.getEdgesInto(url);
+		double val = 0.5;
+		for (String outUrl: incomingUrls)
+			val += 0.5 * internet.getPageRank(outUrl) / internet.getOutDegree(outUrl);
+		return val;
 	}
 	/* Returns a list of urls containing the query, ordered by rank
 	 * Returns an empty list if no web site contains the query.
-	 * 
+	 *
 	 * This method should take about 25 lines of code.
 	 */
 	public ArrayList<String> getResults(String query) {
 		// TODO: Add code here
 		query = query.toLowerCase();
 		HashMap<String, Double> results = new HashMap<>();
-		for (String url: internet.getVertices()){
-			if (wordIndex.containsKey(url))
-			if (wordIndex.get(url).contains(query)) results.put(url, internet.getPageRank(url));
-		}
-		return Sorting.fastSort(results);
+		if (wordIndex.containsKey(query))
+		{
+			ArrayList<String> urlList = wordIndex.get(query);
+			for (String url: urlList)
+				results.put(url, internet.getPageRank(url));}
+		ArrayList<String> sortedUrls = Sorting.fastSort(results);
+		return sortedUrls;
 	}
 }
