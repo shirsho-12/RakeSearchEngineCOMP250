@@ -14,17 +14,18 @@ import java.util.HashMap;
 import java.util.regex.*;
 
 public class HTMLParser {
-    public ArrayList<String> urls;
     public HashMap<String, LinkObject> urlMap;
-    private int depth = 3;
-    String root;
+    private int depth = 3;           // Max depth of recursion
+    String root;                    // Root url of recursion
 
     HTMLParser(String root){
         this.root = root;
+        DFS(root, 0);
     }
     HTMLParser(String root, int depth){
         this.root = root;
         this.depth = depth;
+        DFS(root, 0);
     }
 
     private ArrayList<String> getUrls(@NotNull Document document) {
@@ -39,6 +40,17 @@ public class HTMLParser {
         }
         return linkArray;
     }
+
+    private void DFS(String url, int depth)
+    {
+        if (depth > this.depth) return;
+        for (String link: this.urlMap.get(url).links)
+        {
+            updateMap(link);
+            DFS(link, depth + 1);         // Flag should be used when depth is increased
+        }
+    }
+
     private ArrayList<String> extractContent(@NotNull Document document)
     {
         return null;
@@ -70,5 +82,6 @@ public class HTMLParser {
         Document document;
         ArrayList<String> links;
         ArrayList<String> content;
+//        boolean visited = false;
     }
 }
