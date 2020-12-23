@@ -1,4 +1,4 @@
-package finalproject;
+package src.finalproject;
 
 import java.util.ArrayList;
 import java.util.HashMap;

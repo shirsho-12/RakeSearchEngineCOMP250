@@ -1,8 +1,7 @@
-package finalproject;
+package src.finalproject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map.Entry; // You may need it to implement fastSort
 
 public class Sorting {
 

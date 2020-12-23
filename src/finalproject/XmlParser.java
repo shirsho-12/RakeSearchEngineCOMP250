@@ -1,4 +1,4 @@
-package finalproject;
+package src.finalproject;
 
 import java.io.*;
 import java.util.*;
