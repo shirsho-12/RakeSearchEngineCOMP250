@@ -5,20 +5,20 @@ import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.*;
 import org.jsoup.select.Elements;
-import org.xml.sax.SAXException;
+import src.rake.RakeModel;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import java.util.HashMap;
-import java.util.regex.*;
 
 public class HTMLParser {
     public HashMap<String, LinkObject> urlMap = new HashMap<>();
     private int depth = 3;           // Max depth of recursion
     String root;                    // Root url of recursion
     String keyword = "mit.edu";      // Keyword so that unnecessary links are ignored
+    RakeModel keywordExtractor = new RakeModel(); // Text keyword extractor
+
     public HTMLParser(String root) throws IOException {
         this.root = root;
         updateMap(root);
@@ -56,13 +56,12 @@ public class HTMLParser {
 
     private ArrayList<String> extractContent(@NotNull Document document)
     {
-        // TODO: RAKE-NLTK or TF-IDF
+        // TODO: RAKE-NLTK or TF-IDF -> RAKE Model implemented
+        // Other way: String content = document.text();      content.text();
         Elements content = document.getElementsByTag("p");   // Get <p> tagged content from link
-        for (Element element: content)
-        {
-
-        }
-        return null;
+//        for (Element element: content)
+//            contentArray.add(element.text());                        // Get text line by line: only <p> tags
+        return keywordExtractor.run(content.text());
     }
     private void updateMap(String link) throws IOException, HttpStatusException {
         if (!urlMap.containsKey(link))
@@ -109,6 +108,10 @@ public class HTMLParser {
     }
     public static void testMethod(String url) throws IOException {
         Document doc = Jsoup.connect(url).get();
-        System.out.println(doc.getElementsByTag("p").toString());
+        Elements elements = doc.getElementsByTag("p");
+        for (int i = 0; i < elements.size(); i++)
+        System.out.println(elements.get(i).text());
+        System.out.println(doc.text());
+
     }
 }
