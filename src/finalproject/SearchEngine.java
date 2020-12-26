@@ -2,6 +2,7 @@ package src.finalproject;
 
 import src.HTMLParser;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -11,16 +12,22 @@ public class SearchEngine {
 	public MyWebGraph internet;
 //	public XmlParser parser;
 	public HTMLParser parser;
-	public SearchEngine(){
-		this.wordIndex = new HashMap<String, ArrayList<String>>();
-		this.internet = new MyWebGraph();
-	}
-	public SearchEngine(String filename) throws Exception{
-		this.wordIndex = new HashMap<String, ArrayList<String>>();
-		this.internet = new MyWebGraph();
-		this.parser = new HTMLParser(filename);
-	}
 
+	public SearchEngine(String rootUrl) throws IOException {
+		this.wordIndex = new HashMap<String, ArrayList<String>>();
+		this.internet = new MyWebGraph();
+		this.parser = new HTMLParser(rootUrl);
+	}
+	public SearchEngine(String rootUrl, int depth) throws IOException {
+		this.wordIndex = new HashMap<String, ArrayList<String>>();
+		this.internet = new MyWebGraph();
+		this.parser = new HTMLParser(rootUrl, depth);
+	}
+	public SearchEngine(String rootUrl, String keyword, int depth) throws IOException {
+		this.wordIndex = new HashMap<String, ArrayList<String>>();
+		this.internet = new MyWebGraph();
+		this.parser = new HTMLParser(rootUrl,keyword, depth);
+	}
 	/*
 	 * This does a graph traversal of the web, starting at the given url.
 	 * For each new page seen, it updates the wordIndex, the web graph,
@@ -30,17 +37,15 @@ public class SearchEngine {
 	 */
 	public void crawlAndIndex(String url) throws Exception {
 		// TODO : Add code here
-//		if (! internet.addVertex(url)){
-//			if (!internet.addEdge())
-//		}
+
 		boolean vertexFlag = internet.addVertex(url);
-//		System.out.print(url + " " + vertexFlag + "    ");
 		internet.setVisited(url, true);
 		ArrayList<String> links = parser.getLinks(url);
 		ArrayList<String> text;
 		ArrayList<String> newList;
 		internet.setPageRank(url, 1.0);
 		text = parser.getContent(url);
+		if (text != null) text = new ArrayList<>();
 		for (String word: text){
 			word = word.toLowerCase();
 			if (!wordIndex.containsKey(word)){
@@ -67,8 +72,6 @@ public class SearchEngine {
 
 		for (String link: links){
 			internet.addVertex(link);
-//			java.util.Set<String> set = new java.util.HashSet<>();
-
 			internet.addEdge(url, link);
 			if (!internet.getVisited(link)) {
 				crawlAndIndex(link);
@@ -145,7 +148,8 @@ public class SearchEngine {
 		{
 			ArrayList<String> urlList = wordIndex.get(query);
 			for (String url: urlList)
-				results.put(url, internet.getPageRank(url));}
+				results.put(url, internet.getPageRank(url));
+		}
 		ArrayList<String> sortedUrls = Sorting.fastSort(results);
 		return sortedUrls;
 	}
