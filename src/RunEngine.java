@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class RunEngine {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         String url;
         String keyword;
         int depth;
@@ -22,26 +22,29 @@ public class RunEngine {
         depth = scanner.nextInt();
         System.out.println("TREE GENERATION INITIATED");
         SearchEngine engine = new SearchEngine(url, keyword, depth);
+        engine.crawlAndIndex(url);
+        engine.assignPageRanks(0.0001);
         System.out.println("TREE GENERATION COMPLETE");
 
         String searchTerm;
         ArrayList<String> searchResults;
-        while (true){
-            System.out.println("Enter word into search engine (Enter -1 to exit: ");
+        while (true) {
+            System.out.println("Enter word into search engine (Enter -1 to exit): ");
             searchTerm = scanner.next();
-            if (searchTerm.equals("-1")) break;
+            if (searchTerm.strip().equals("-1")) break;
             searchResults = engine.getResults(searchTerm);
-            if (searchResults == null || searchResults.size() == 0)
-                System.out.println("No results found");
-            else{
+            try {
                 int i = 0;
-                System.out.println("Top results");
-                for (String result: searchResults){
+                System.out.println("Top results:  ");
+                for (String result : searchResults) {
                     i++;
                     System.out.println("Result " + i + ": " + result);
                     if (i == 5) break;
                 }
+            } catch (Exception e) {
+                System.out.println("No results found");
             }
+
         }
     }
 }
