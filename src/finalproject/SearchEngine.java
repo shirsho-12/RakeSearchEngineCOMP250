@@ -26,7 +26,7 @@ public class SearchEngine {
 	public SearchEngine(String rootUrl, String keyword, int depth) throws IOException {
 		this.wordIndex = new HashMap<String, ArrayList<String>>();
 		this.internet = new MyWebGraph();
-		this.parser = new HTMLParser(rootUrl,keyword, depth);
+		this.parser = new HTMLParser(rootUrl,keyword, depth, false);
 	}
 	/*
 	 * This does a graph traversal of the web, starting at the given url.
@@ -45,7 +45,7 @@ public class SearchEngine {
 		ArrayList<String> newList;
 		internet.setPageRank(url, 1.0);
 		text = parser.getContent(url);
-		if (text != null) text = new ArrayList<>();
+		if (text == null) text = new ArrayList<>();
 		for (String word: text){
 			word = word.toLowerCase();
 			if (!wordIndex.containsKey(word)){
@@ -69,7 +69,7 @@ public class SearchEngine {
 			}
 			wordIndex.put(url, text);
 		}
-
+		if (links == null) links = new ArrayList<>();
 		for (String link: links){
 			internet.addVertex(link);
 			internet.addEdge(url, link);

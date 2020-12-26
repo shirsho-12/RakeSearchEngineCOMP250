@@ -8,44 +8,63 @@ import org.jsoup.select.Elements;
 import src.rake.RakeModel;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 public class HTMLParser {
     public HashMap<String, LinkObject> urlMap = new HashMap<>();
     private int depth = 3;           // Max depth of recursion
     String root;                    // Root url of recursion
     String keyword = "mit.edu";      // Keyword so that unnecessary links are ignored
+    HashMap<String, Exception> exceptionList = new HashMap<>();
     RakeModel keywordExtractor = new RakeModel(); // Text keyword extractor
+    boolean debug;
 
     public HTMLParser(String root) throws IOException {
         this.root = root;
         updateMap(root);
         DFS(root, 0);
+        debug = true;
     }
     public HTMLParser(String root, int depth) throws IOException {
         this.root = root;
         this.depth = depth;
+        this.debug = true;
         updateMap(root);
         DFS(root, 0);
+    }
+    public HTMLParser(String root, String keyword, int depth, boolean debug) throws IOException {
+        this.root = root;
+        this.depth = depth;
+        this.keyword = keyword;
+        updateMap(root);
+        DFS(root, 0);
+        this.debug = debug;
     }
 
     private ArrayList<String> getUrls(@NotNull Document document) {
         Elements links = document.select("a");
+
         ArrayList<String> linkArray = new ArrayList<>();
         for (Element link: links){
             String rawLink = link.outerHtml();
-            String refinedLink = rawLink.split("\"")[1];
-            if (refinedLink.contains(keyword) && !refinedLink.startsWith("mailto"))
-                if (! linkArray.contains(refinedLink))
+            String[] rawLinkArray = rawLink.split("\"");
+            if (rawLinkArray.length <= 1) continue;
+            String refinedLink = rawLinkArray[1];
+            if (refinedLink.contains(keyword) && !refinedLink.startsWith("mailto")) {
+                if (!linkArray.contains(refinedLink)) {
                     linkArray.add(refinedLink);
+                }
+            }
         }
         return linkArray;
     }
 
     private void DFS(String url, int depth) throws IOException {
-        if (this.urlMap.get(url) == null) System.out.println(url);
+//        if (this.urlMap.get(url) == null) System.out.println("NULL : " + url);
         if (depth >= this.depth || this.urlMap.get(url) == null) return;
         for (String link: this.urlMap.get(url).links)
         {
@@ -54,17 +73,18 @@ public class HTMLParser {
         }
     }
 
-    private ArrayList<String> extractContent(@NotNull Document document)
-    {
+    private ArrayList<String> extractContent(@NotNull Document document) throws UnsupportedEncodingException {
         // TODO: RAKE-NLTK or TF-IDF -> RAKE Model implemented
         // Other way: String content = document.text();      content.text();
-        Elements content = document.getElementsByTag("p");   // Get <p> tagged content from link
-//        for (Element element: content)
-//            contentArray.add(element.text());                        // Get text line by line: only <p> tags
-        return keywordExtractor.run(content.text());
+//        return null;
+        String content = document.getElementsByTag("p").text();   // Get <p> tagged content from link
+        ArrayList<String> contentArray = keywordExtractor.run(content);
+
+        if (contentArray.size() == 0)  return null;
+        return contentArray;
     }
     private void updateMap(String link) throws IOException, HttpStatusException {
-        if (!urlMap.containsKey(link))
+        if (!urlMap.containsKey(link) && !exceptionList.containsKey(link))
         {
             try{
             // Create new link object
@@ -74,8 +94,9 @@ public class HTMLParser {
             object.content = extractContent(object.document);
             urlMap.put(link, object);
             }
-            catch (HttpStatusException e) {
-                System.out.println(e);
+            catch (Exception e) {
+                if (debug) System.out.println(e);
+                exceptionList.put(link, e);
             }
             finally {
                 return;
@@ -92,7 +113,11 @@ public class HTMLParser {
         if (urlMap.containsKey(link)) return urlMap.get(link).content;
         return null;
     }
-
+    public void printExceptions(){
+        for (String link: exceptionList.keySet()){
+            System.out.println(exceptionList.get(link));
+        }
+    }
     private class LinkObject{
         Document document;
         ArrayList<String> links;
@@ -106,12 +131,5 @@ public class HTMLParser {
                     '}';
         }
     }
-    public static void testMethod(String url) throws IOException {
-        Document doc = Jsoup.connect(url).get();
-        Elements elements = doc.getElementsByTag("p");
-        for (int i = 0; i < elements.size(); i++)
-        System.out.println(elements.get(i).text());
-        System.out.println(doc.text());
 
-    }
 }
