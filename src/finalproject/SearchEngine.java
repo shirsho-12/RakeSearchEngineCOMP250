@@ -1,5 +1,7 @@
 package src.finalproject;
 
+import src.HTMLParser;
+
 import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -7,7 +9,8 @@ import java.util.ArrayList;
 public class SearchEngine {
 	public HashMap<String, ArrayList<String> > wordIndex;   // this will contain a set of pairs (String, LinkedList of Strings)
 	public MyWebGraph internet;
-	public XmlParser parser;
+//	public XmlParser parser;
+	public HTMLParser parser;
 	public SearchEngine(){
 		this.wordIndex = new HashMap<String, ArrayList<String>>();
 		this.internet = new MyWebGraph();
@@ -15,7 +18,7 @@ public class SearchEngine {
 	public SearchEngine(String filename) throws Exception{
 		this.wordIndex = new HashMap<String, ArrayList<String>>();
 		this.internet = new MyWebGraph();
-		this.parser = new XmlParser(filename);
+		this.parser = new HTMLParser(filename);
 	}
 
 	/*

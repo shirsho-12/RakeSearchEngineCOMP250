@@ -28,15 +28,6 @@ public class WordDict implements Iterable<String>{
     public Integer getFrequency(String word){
         return frequencyDict.get(word);
     }
-    // Filter to remove words below threshold frequency
-    public static ArrayList<String> adjoinedCandidateFilter(WordDict candidates,
-                                                                   int threshold){
-        ArrayList<String> filteredCandidates = new ArrayList<>();
-        for (String candidate: candidates){
-            if (candidates.getFrequency(candidate) > threshold)
-                filteredCandidates.add(candidate);
-        }
-        return filteredCandidates;
-    }
+
 
 }

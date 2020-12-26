@@ -2,6 +2,7 @@ package src.rake;
 
 import src.finalproject.Sorting;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,12 +34,12 @@ converted to Java in the package by me.
 public class RakeModel {
     ArrayList<String> stopWords = new StopWords().getStopWords();
     // An adjoined string refers to a phrase i.e. 1 or more words
-    public int minCharLength = 1, maxWordsLength = 5;
+    public int minCharLength = 2, maxWordsLength = 5;
     // Minimum number of words in the adjoined string
     public int minWords = 1, maxWords = 1;
     // Minimum phrase and keyword frequencies required to be counted
     public int minPhraseFreqAdj = 2, minKeywordFrequency = 1;
-
+    public HashMap<String, Double> candidateScores;  // Allows score access for printing
     private boolean isNumber(String s)
     {
         return s.matches("[+-]?[0-9]*\\.?[0-9]+");
@@ -46,9 +47,9 @@ public class RakeModel {
 
     private ArrayList<String> separateWords(String text, int minWordSize)
     {
-        Pattern textSplitter = Pattern.compile("[a-zA-Z0-9_\\+\\-/]");
+//        Pattern textSplitter = Pattern.compile("[a-zA-Z0-9_\\+\\-/]");
         ArrayList<String> words = new ArrayList<>();
-        for (String word: textSplitter.split(text))
+        for (String word: text.split(" "))        // ReGeX pattern discarded
         {
             String currWord = word.strip();
             // Numbers stay in phrase but are not counted as they invalidate phrase scores
@@ -57,9 +58,10 @@ public class RakeModel {
         }
         return words;
     }
-    private  ArrayList<String> separateSentences(String text){
+    public ArrayList<String> separateSentences(String text) throws UnsupportedEncodingException {
         // Sentence pattern obtained from Python code
-        Pattern sp = Pattern.compile("[\\\\[\\\\]\\n.!?,;:\\t\\\\-\\\\\"\\\\(\\\\)\\\\\\'\\u2019\\u2013]");
+        byte[] pb = "[\\[\\]\n.!?,;:\t\\-\\\"\\(\\)\\\'\u2019\u2013]".getBytes("UTF-8");
+        Pattern sp = Pattern.compile(new String(pb, "UTF-8")); // May need further editing
         // Convert String array to arrayList
         ArrayList<String> sentenceList = new ArrayList<>(Arrays.asList(sp.split(text)));
         return sentenceList;
@@ -67,42 +69,57 @@ public class RakeModel {
     private Pattern stopWordRegexBuilder(){
         String stopWordPattern = "";
         for (String word: stopWords)
-            stopWordPattern.concat("\\b" + word + "\\b|");
+            stopWordPattern += "\\b" + word + "\\b|";     // \\b is the word boundary for the regex pattern
         stopWordPattern = stopWordPattern.substring(0, stopWordPattern.length() - 1);
-        return Pattern.compile(stopWordPattern);
+        return Pattern.compile(stopWordPattern, Pattern.CASE_INSENSITIVE);
     }
     private ArrayList<String> adjoinCandidateExtractor(ArrayList<String> sentences)
     {
         WordDict adjoinedCandidates = new WordDict();
-        for (String sentence: sentences)
+        for (String sentence: sentences){
+
             adjoinedCandidates.addDict(adjoinedSentenceExtractor(sentence));
-        return WordDict.adjoinedCandidateFilter(adjoinedCandidates, minPhraseFreqAdj);
+        }
+        return adjoinedCandidateFilter(adjoinedCandidates, minPhraseFreqAdj);
+    }
+    // Filter to remove words below threshold frequency
+    private ArrayList<String> adjoinedCandidateFilter(WordDict candidates,
+                                                            int threshold){
+        ArrayList<String> filteredCandidates = new ArrayList<>();
+        for (String candidate: candidates){
+            if (candidates.getFrequency(candidate) >=  threshold) {
+                filteredCandidates.add(candidate);
+            }
+        }
+        return filteredCandidates;
     }
     private WordDict adjoinedSentenceExtractor(String sentence)
     {
         WordDict wordDict = new WordDict();
-//        ArrayList<String> candidates = new ArrayList<>();
         String[] sLCase = sentence.toLowerCase().strip().split(" ");
-        for (int i = minWords; i <= maxWords; i++)   // i is the number of keywords
-            for (int j = 0; j < i; j++){
+        for (int numKeywords = minWords; numKeywords <= maxWords; numKeywords++)
+            for (int j = 0; j < (sLCase.length - numKeywords); j++){
                 if (! stopWords.contains(sLCase[j])){
                     String candidate = sLCase[j];
                     int k = 1;
                     int keywordCounter = 1;           // Measures length of candidate sequence
                     boolean containsStopWord = false;
-                    while (keywordCounter < i && (j+k) < sLCase.length){
+                    while (keywordCounter < numKeywords && (j+k) < sLCase.length){
                         // Add the next word to candidate sequence
                         candidate += " " + sLCase[j+k];
-                        if (stopWords.contains(sLCase[i+j])) containsStopWord = true;
-                        else keywordCounter += 1;
+                        if (stopWords.contains(sLCase[j + k]))
+                            containsStopWord = true;
+                        else
+                            keywordCounter += 1;
                         k++;      // Go to next word
                     }
                     //Candidate added to list iff (1) it contains a stop word, (2) the last word is not a stop word and
                     // adjoined candidate phrase is exactly equal to the number of keywords allowed (i) - prevents duplicates
                     if (containsStopWord &&
                             !stopWords.contains(candidate.substring(candidate.lastIndexOf(" ") + 1)) &&
-                            keywordCounter == i)
+                            keywordCounter == numKeywords) {
                         wordDict.add(candidate);
+                    }
                 }
             }
         return wordDict;
@@ -112,10 +129,12 @@ public class RakeModel {
         ArrayList<String> phraseList = new ArrayList<>();
         WordDict phraseCounter = new WordDict();
         for (String sentence: sentences){
+            // Previous problem: only using | in regex for str.split instead of \\|
             sentence = sentence.strip().replaceAll(stopWordRegexBuilder().pattern(), "|");
-            String[] phrases = sentence.split("|");
-            for (String phrase: phrases)
+            ArrayList<String> phrases = new ArrayList<>(Arrays.asList(sentence.split("\\|")));
+            for (String phrase: phrases) {
                 if (phraseCheck(phrase)) phraseCounter.add(phrase);
+            }
         }
         // Add phrase to array only if it passes a minimum frequency
         for (String phrase: phraseCounter){
@@ -123,7 +142,7 @@ public class RakeModel {
                 phraseList.add(phrase);
         }
         ArrayList<String> adjCandidates = adjoinCandidateExtractor(sentences);
-        System.arraycopy(adjCandidates, 0, phraseList, phraseList.size(), phraseList.size());
+        phraseList.addAll(adjCandidates);
         return phraseList;
     }
     private boolean phraseCheck(String phrase){
@@ -170,16 +189,16 @@ public class RakeModel {
             ArrayList<String> wordArray = separateWords(phrase, 0);
             for (String word: wordArray)
                 cScore += wordScores.get(word);
-            candidateScores.put(phrase, cScore);
+            candidateScores.put(phrase.strip(), cScore);
         }
         return candidateScores;
     }
-    public ArrayList<String> run(String text){
+    public ArrayList<String> run(String text) throws UnsupportedEncodingException {
         ArrayList<String> sentences = separateSentences(text);
         ArrayList<String> phraseArray = generateCandidateKeywords(sentences);
         HashMap<String, Double> wordScores = calculateWordScore(phraseArray);
 
-        HashMap<String, Double> candidateScores = getCandidateScores(phraseArray, wordScores);
+        candidateScores = getCandidateScores(phraseArray, wordScores);
         return Sorting.fastSort(candidateScores);
     }
 }
