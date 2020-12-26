@@ -1,5 +1,3 @@
-package src;
-
 import src.finalproject.SearchEngine;
 
 import java.io.IOException;
