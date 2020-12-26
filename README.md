@@ -7,8 +7,9 @@ The HTMLParser scrapes through webpages and stores all the keywords in RAKE scor
 
 ```
   public void traversalTest() throws IOException {
-  \\ The method has 3 configurable presets as can be seen in the HTML Parser: A URL keyphrase to ensure the search doesn't spiral out of control, a tree depth variable 
-  \\ and a debug flag. The debug flag shows all the URLs that the parser failed to connect with
+  \\ The method has 3 configurable presets as can be seen in the HTML Parser: A URL keyphrase to 
+  \\ ensure the search doesn't spiral out of control, a tree depth variable and a debug flag. 
+  \\ The debug flag shows all the URLs that the parser failed to connect with
    
         String root = "https://css.csail.mit.edu/";
         HTMLParser parser = new HTMLParser(root, 2);
