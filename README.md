@@ -1,4 +1,4 @@
-# Mini Search Engine
+# RAKE Java Search Engine
 A Java 15 implementation of a miniature search engine using jSoup and the Rapid Automatic Keyword Extraction (RAKE) algorithm as described in: Rose, S., Engel, D., Cramer, N., & Cowley, W. (2010). Automatic Keyword Extraction from Individual Documents. In M. W. Berry & J. Kogan (Eds.), Text Mining: Theory and Applications: John Wiley & Sons.
 
 The RAKE Algorithm implementation is based on the python one from https://github.com/aneesha/RAKE
