@@ -5,6 +5,7 @@ The RAKE Algorithm implementation is based on the python one from https://github
 
 The HTMLParser scrapes through webpages and stores all the keywords in RAKE score sorted order. 
 
+The tester code here shows how the HTML parser can work.
 ```
   public void traversalTest() throws IOException {
   \\ The method has 3 configurable presets as can be seen in the HTML Parser: A URL keyphrase to 
