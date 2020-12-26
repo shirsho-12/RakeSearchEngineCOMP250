@@ -31,17 +31,16 @@ public class RunEngine {
             searchTerm = scanner.next();
             if (searchTerm.strip().equals("-1")) break;
             searchResults = engine.getResults(searchTerm);
-            try {
-                int i = 0;
-                System.out.println("Top results:  ");
-                for (String result : searchResults) {
-                    i++;
-                    System.out.println("Result " + i + ": " + result);
-                    if (i == 5) break;
-                }
-            } catch (Exception e) {
-                System.out.println("No results found");
+
+            int i = 0;
+            System.out.println("Top results:  ");
+            for (String result : searchResults) {
+                i++;
+                System.out.println("Result " + i + ": " + result);
+                if (i == 5) break;
             }
+            if (i == 0) System.out.println("No results found");
+
 
         }
     }
