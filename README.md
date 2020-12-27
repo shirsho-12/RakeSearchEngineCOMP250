@@ -7,6 +7,7 @@ The HTMLParser scrapes through webpages and stores all the keywords in RAKE scor
 
 The tester code here shows how the HTML parser can work.
 ```java
+
   public void traversalTest() throws IOException {
   \\ The method has 3 configurable presets as can be seen in the HTML Parser: A URL keyphrase to 
   \\ ensure the search doesn't spiral out of control, a tree depth variable and a debug flag. 
